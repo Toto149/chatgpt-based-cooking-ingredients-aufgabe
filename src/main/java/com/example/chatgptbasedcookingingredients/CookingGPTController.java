@@ -1,6 +1,5 @@
 package com.example.chatgptbasedcookingingredients;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,37 +12,41 @@ import java.util.List;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("/ingredients")
+@RequestMapping("/cooking")
 @RequiredArgsConstructor
-public class IngredientController {
-    @Value("${openai-api-key}")
+public class CookingGPTController {
+    @Value("${OPEN_AI_API_KEY}")
     private String chatGPTApiKey;
     @PostMapping
-    String categorizeIngredient(@RequestBody String ingredient) {
+    String cookingInstructions(@RequestBody String ingredients){
 
-        // TODO: This should return "vegan", "vegetarian" or "regular" depending on the ingredient.
         ChatGPTResponse response = Objects.requireNonNull(
                 WebClient.create()
                         .post()
                         .uri("https://api.openai.com/v1/chat/completions")
                         .header("Authorization", "Bearer " + chatGPTApiKey)
-                        .bodyValue(new ChatGPTRequest("gpt-3.5-turbo",
+                        .bodyValue(new ChatGPTRequest(
+                                "gpt-3.5-turbo",
                                 List.of(new ChatGPTRequestMessage(
                                         "user",
-                                        "In one word is this ingredient either 'vegan', 'vegatarian' or 'regular' if it is neither: "
-                                                +ingredient +"?\n"
-                                                + "Answer only with one of the three options metioned. If the ingredient is 'vegan' and 'vegetarian' answer with 'vegan'")
+                                        "Give me a short and consice cooking instructions for a dish " +
+                                                "with these following ingredients:\n"
+                                        + ingredients + "."
 
-                                )))
+                                ))
+                        )
+                        )
                         .retrieve()
                         .toEntity(ChatGPTResponse.class)
                         .block()
+
         ).getBody();
+
         if(response.choices().size()>0){
-            return response.choices().get(0).message().content();
-        } else{
+            return  response.choices().get(0).message().content();
+        }
+        else{
             return " ";
         }
     }
-
 }
